@@ -37,28 +37,45 @@ describe RubyBox::Client do
       client.split_path('foo/bar/').should == ['foo', 'bar']
     end
   end
-  
+
   describe '#create_folder' do
-    it 'doesnt call folder.create_folder if the folder exists' do
-      client = RubyBox::Client.new(@session)
-      mock_root_folder = mock( Object )
-      test_folder = mock( Object )
-      mock_root_folder.should_receive(:folders).and_return([test_folder])
-      mock_root_folder.should_not_receive(:create_subfolder)
-      client.should_receive(:root_folder).and_return(mock_root_folder)
-      result = client.create_folder( '/test0')
-      result.should == test_folder
+    let!(:client){RubyBox::Client.new(@session)}
+    let(:mock_root_folder){mock( Object )}
+    let(:test_folder){mock( Object )}
+
+    context 'list method' do
+      it 'doesnt call folder.create_folder if the folder exists' do
+        mock_root_folder.should_receive(:folders).and_return([test_folder])
+        mock_root_folder.should_not_receive(:create_subfolder)
+        client.should_receive(:root_folder).and_return(mock_root_folder)
+        result = client.create_folder('/test0')
+        result.should == test_folder
+      end
+
+      it 'calls folder.create_folder if the folder does not exist' do
+        mock_root_folder.should_receive(:folders).and_return([])
+        mock_root_folder.should_receive(:create_subfolder).and_return(test_folder)
+        client.should_receive(:root_folder).and_return(mock_root_folder)
+        result = client.create_folder('/test0')
+        result.should == test_folder
+      end
     end
-    
-    it 'calls folder.create_folder if the folder does not exist' do
-      client = RubyBox::Client.new(@session)
-      mock_root_folder = mock( Object )
-      test_folder = mock( Object )
-      mock_root_folder.should_receive(:folders).and_return([])
-      mock_root_folder.should_receive(:create_subfolder).and_return(test_folder)
-      client.should_receive(:root_folder).and_return(mock_root_folder)
-      result = client.create_folder( '/test0')
-      result.should == test_folder
+    context 'search method' do
+      it 'doesnt call folder.create_folder if the folder exists' do
+        mock_root_folder.should_receive(:find_folder_using_search).and_return(test_folder)
+        mock_root_folder.should_not_receive(:create_subfolder)
+        client.should_receive(:root_folder).and_return(mock_root_folder)
+        result = client.create_folder('/test0', :search)
+        result.should == test_folder
+      end
+
+      it 'calls folder.create_folder if the folder does not exist' do
+        mock_root_folder.should_receive(:find_folder_using_search).and_return(nil)
+        mock_root_folder.should_receive(:create_subfolder).and_return(test_folder)
+        client.should_receive(:root_folder).and_return(mock_root_folder)
+        result = client.create_folder('/test0', :search)
+        result.should == test_folder
+      end
     end
   end
 end

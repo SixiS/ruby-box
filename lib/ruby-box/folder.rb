@@ -13,6 +13,15 @@ module RubyBox
       items_by_type(RubyBox::Folder, name, item_limit, offset, fields)
     end
 
+    def find_folder_using_search(client, folder_name)
+      args = {
+        ancestor_folder_ids: self.id,
+        content_types: "name",
+        type: "folder"
+      }
+      client.search(folder_name, 100, 0, args).select{|f| f.parent.id == self.id}.first
+    end
+
     def upload_file(filename, data, overwrite=true)
       file = RubyBox::File.new(@session, {
         'name' => filename,
@@ -22,7 +31,7 @@ module RubyBox
       begin
         resp = file.upload_content(data) #write a new file. If there is a conflict, update the conflicted file.
       rescue RubyBox::ItemNameInUse => e
-        
+
         # if overwrite flag is false, simply raise exception.
         raise e unless overwrite
 

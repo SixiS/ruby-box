@@ -58,10 +58,12 @@ module RubyBox
       file.stream(opts) if file
     end
 
-    def search(query, item_limit=100, offset=0)
+    def search(query, item_limit=100, offset=0, args = {})
       Enumerator.new do |yielder|
         while true
-          url = "#{RubyBox::API_URL}/search?query=#{URI::encode(query)}&limit=#{item_limit}&offset=#{offset}"
+          params = args.merge({query: URI::encode(query), limit: item_limit, offset: offset})
+          param_string = params.map{|k,v| "#{k}=#{v}"}.join("&")
+          url = "#{RubyBox::API_URL}/search?#{param_string}"
           resp = @session.get( url )
           resp['entries'].each do |entry|
             yielder.yield(RubyBox::Item.factory(@session, entry))
@@ -72,11 +74,17 @@ module RubyBox
       end
     end
 
-    def create_folder(path)
+    def create_folder(path, method = :list)
       folder = root_folder
       folder_names = split_path(path)
       folder_names.each do |folder_name|
-        new_folder = folder.folders(folder_name).first        
+        new_folder = case method.to_sym
+        when :list
+          folder.folders(folder_name).first
+        when :search
+          folder.find_folder_using_search(self, folder_name)
+        end
+
         if !new_folder
           begin
             new_folder = folder.create_subfolder(folder_name)
@@ -158,6 +166,6 @@ module RubyBox
       limit = limit.kind_of?(Fixnum) ? limit : 100
       "stream_position=#{stream_position}&stream_type=#{stream_type}&limit=#{limit}"
     end
-    
+
   end
 end
