@@ -19,7 +19,7 @@ module RubyBox
         content_types: "name",
         type: "folder"
       }
-      client.search(folder_name, 100, 0, args).select{|f| f.parent.id == self.id}.first
+      client.search(folder_name, 100, 0, args).select{|f| f.parent.nil? ? false : f.parent.id == self.id}.first
     end
 
     def upload_file(filename, data, overwrite=true)
